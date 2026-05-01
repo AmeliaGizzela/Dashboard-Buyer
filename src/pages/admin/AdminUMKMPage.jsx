@@ -1,0 +1,1 @@
+﻿export { AdminUMKMPage } from './AdminLoginPage'
