@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   ShoppingCart, Users, Package, TrendingUp, Eye,
   Clock, CheckCircle2, AlertCircle, Filter,
-  BarChart2, MapPin, ArrowUpRight, RefreshCw
+  BarChart2, MapPin, ArrowUpRight, RefreshCw,
+  ArrowLeft, ChevronRight, Plus, Trash2
 } from 'lucide-react'
 import { StatusBadge, GradeBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -395,11 +396,237 @@ export function AdminLoginPage() {
 }
 
 export function AdminOrderDetailPage() {
+  const { id } = useParams()
+  const rfq = MOCK_RFQS.find(r => r.id === id)
+
+  const [allocations, setAllocations] = useState([])
+  const [selectedUMKM, setSelectedUMKM] = useState('')
+  const [allocateQty, setAllocateQty] = useState('')
+
+  if (!rfq) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-dark-400">Order not found.</p>
+        <Link to="/admin/orders" className="text-brand-400 mt-4 inline-block">← Back to Orders</Link>
+      </div>
+    )
+  }
+
+  const targetQty = rfq.quantity
+  const totalAllocated = allocations.reduce((sum, a) => sum + a.qty, 0)
+  const progress = Math.min(100, (totalAllocated / targetQty) * 100)
+
+  const handleAllocate = (e) => {
+    e.preventDefault()
+    if (!selectedUMKM || !allocateQty) return
+    const umkm = UMKM_LIST.find(u => u.id.toString() === selectedUMKM)
+    if (!umkm) return
+
+    setAllocations([...allocations, {
+      id: Date.now(),
+      umkm,
+      qty: Number(allocateQty)
+    }])
+    setSelectedUMKM('')
+    setAllocateQty('')
+  }
+
+  const removeAllocation = (idToRemove) => {
+    setAllocations(allocations.filter(a => a.id !== idToRemove))
+  }
+
+  const currentStepIdx = ORDER_STATUSES.findIndex(s => s.key === rfq.status)
+
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-2xl font-bold text-white">Order Detail</h1>
-      <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 text-dark-400 text-center py-20">
-        Detail order dengan panel alokasi — Task 7.
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-3 text-sm text-dark-400">
+        <Link to="/admin/orders" className="hover:text-white transition-colors flex items-center gap-1">
+          <ArrowLeft size={14} /> Pipeline
+        </Link>
+        <ChevronRight size={14} />
+        <span className="text-white font-mono">{rfq.id}</span>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-white mb-1">{rfq.company}</h1>
+          <p className="text-dark-400 text-sm">{rfq.country} · {rfq.email}</p>
+        </div>
+        <StatusBadge status={rfq.status} />
+      </div>
+
+      {/* Stepper Pipeline */}
+      <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 overflow-hidden">
+        <div className="flex items-center justify-between relative min-w-[600px]">
+          <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-0.5 bg-dark-800 z-0" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 h-0.5 bg-brand-500 z-0 transition-all duration-500"
+               style={{ width: `calc(${(Math.max(0, currentStepIdx) / (ORDER_STATUSES.length - 1)) * 100}% - 32px)` }} />
+          
+          {ORDER_STATUSES.map((step, idx) => {
+            const isCompleted = idx < currentStepIdx
+            const isCurrent = idx === currentStepIdx
+            const isFuture = idx > currentStepIdx
+
+            return (
+              <div key={step.key} className="relative z-10 flex flex-col items-center gap-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors
+                  ${isCompleted ? 'bg-brand-500 border-brand-500 text-white' : 
+                    isCurrent ? 'bg-dark-900 border-brand-500 text-brand-400' : 
+                    'bg-dark-900 border-dark-700 text-dark-600'}`}>
+                  {isCompleted ? <CheckCircle2 size={16} /> : (idx + 1)}
+                </div>
+                <span className={`text-[10px] font-medium uppercase tracking-wider ${isFuture ? 'text-dark-600' : 'text-white'}`}>
+                  {step.label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Col: Request Info */}
+        <div className="space-y-6">
+          <div className="bg-dark-900 border border-dark-800 rounded-xl p-6">
+            <h3 className="font-semibold text-white mb-4">Request Details</h3>
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="text-dark-500 mb-0.5">Product</p>
+                <p className="text-white font-medium">{rfq.product}</p>
+              </div>
+              <div>
+                <p className="text-dark-500 mb-1">Target Grade</p>
+                <GradeBadge grade={rfq.grade} />
+              </div>
+              <div>
+                <p className="text-dark-500 mb-0.5">Quantity Required</p>
+                <p className="text-white font-medium">{rfq.quantity.toLocaleString()} kg</p>
+              </div>
+              <div>
+                <p className="text-dark-500 mb-0.5">Target Delivery</p>
+                <p className="text-white font-medium">{formatDate(rfq.deliveryDate)}</p>
+              </div>
+              <div>
+                <p className="text-dark-500 mb-0.5">Incoterm</p>
+                <p className="text-white font-medium">{rfq.incoterm || 'FOB'}</p>
+              </div>
+              {rfq.notes && (
+                <div>
+                  <p className="text-dark-500 mb-1">Buyer Notes</p>
+                  <p className="text-dark-300 bg-dark-800 p-3 rounded-lg text-xs leading-relaxed border border-dark-700">
+                    {rfq.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Col: Allocation Panel */}
+        <div className="lg:col-span-2">
+          <div className="bg-dark-900 border border-dark-800 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="font-semibold text-white flex items-center gap-2">
+                  <Package size={16} className="text-brand-400" /> UMKM Allocation Panel
+                </h3>
+                <p className="text-xs text-dark-500 mt-1">Distribute requested volume to supply chain network.</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-dark-500 mb-1">Fulfillment Progress</p>
+                <p className="text-sm font-semibold text-white">
+                  {totalAllocated.toLocaleString()} / {targetQty.toLocaleString()} kg
+                </p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-dark-800 rounded-full h-2.5 mb-6 overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${progress >= 100 ? 'bg-emerald-500' : 'bg-brand-500'}`} 
+                style={{ width: `${progress}%` }} 
+              />
+            </div>
+
+            {/* Allocation Form */}
+            <form onSubmit={handleAllocate} className="flex flex-col sm:flex-row gap-3 items-end mb-6 bg-dark-800 p-4 rounded-xl border border-dark-700">
+              <div className="flex-1 w-full">
+                <label className="label text-dark-300">Select UMKM Partner</label>
+                <select 
+                  className="input bg-dark-900 border-dark-700 text-white w-full" 
+                  value={selectedUMKM} 
+                  onChange={e => setSelectedUMKM(e.target.value)} 
+                  required
+                >
+                  <option value="">— Choose eligible partner —</option>
+                  {UMKM_LIST.filter(u => u.status === 'active').map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} (Cap: {u.capacity} kg/mo · Grade: {u.grade})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="w-full sm:w-32">
+                <label className="label text-dark-300">Qty (kg)</label>
+                <input 
+                  type="number" 
+                  className="input bg-dark-900 border-dark-700 text-white w-full" 
+                  value={allocateQty} 
+                  onChange={e => setAllocateQty(e.target.value)} 
+                  placeholder="0" 
+                  required min="1" 
+                />
+              </div>
+              <Button type="submit" variant="primary" size="md" className="w-full sm:w-auto">
+                <Plus size={16} /> Add
+              </Button>
+            </form>
+
+            {/* Allocated List */}
+            <div className="space-y-3">
+              {allocations.length === 0 ? (
+                <div className="text-center py-10 text-dark-500 text-sm border border-dashed border-dark-700 rounded-xl bg-dark-800/50">
+                  No volume allocated yet. Select an UMKM above to begin.
+                </div>
+              ) : allocations.map(a => (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  key={a.id} 
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-dark-800 border border-dark-700 p-4 rounded-xl gap-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-dark-700 flex items-center justify-center flex-shrink-0">
+                      <Users size={16} className="text-brand-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">{a.umkm.name}</p>
+                      <p className="text-xs text-dark-500">{a.umkm.location} · {a.umkm.grade}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs text-dark-500">Assigned Volume</p>
+                      <p className="text-sm font-semibold text-white">{a.qty.toLocaleString()} kg</p>
+                    </div>
+                    <button 
+                      onClick={() => removeAllocation(a.id)} 
+                      className="text-dark-500 hover:text-red-400 hover:bg-dark-700 transition-colors p-2 rounded-lg"
+                      title="Remove allocation"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   )
@@ -410,7 +637,7 @@ export function AdminAllocationPage() {
     <div className="space-y-6">
       <h1 className="font-display text-2xl font-bold text-white">Alokasi Kuota</h1>
       <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 text-dark-400 text-center py-20">
-        Panel alokasi kuota ke UMKM — Task 7.
+        Panel alokasi kuota ke UMKM — Diintegrasikan ke dalam halaman Order Detail.
       </div>
     </div>
   )

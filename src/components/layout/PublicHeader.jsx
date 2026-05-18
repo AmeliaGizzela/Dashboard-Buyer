@@ -14,6 +14,8 @@ const NAV_LINKS = [
 export function PublicHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled]     = useState(false)
+  const [lang, setLang]             = useState('EN')
+  const [langOpen, setLangOpen]     = useState(false)
   const location = useLocation()
 
   useEffect(() => {
@@ -68,11 +70,37 @@ export function PublicHeader() {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-sm text-dark-500">
-              <Globe size={14} />
-              <span>EN</span>
+          <div className="hidden md:flex items-center gap-4">
+            <div className="relative">
+              <button 
+                onClick={() => setLangOpen(!langOpen)}
+                onBlur={() => setTimeout(() => setLangOpen(false), 200)}
+                className="flex items-center gap-1.5 text-sm font-medium text-dark-600 hover:text-dark-900 transition-colors"
+              >
+                <Globe size={16} />
+                <span>{lang}</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${langOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {/* Dropdown Menu */}
+              {langOpen && (
+                <div className="absolute right-0 top-full mt-2 w-32 bg-white border border-dark-100 rounded-xl shadow-lg py-1.5 z-50 animate-in fade-in slide-in-from-top-2">
+                  <button 
+                    onClick={() => { setLang('EN'); setLangOpen(false); alert('Language switched to English (Demo)') }} 
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${lang === 'EN' ? 'text-brand-600 bg-brand-50 font-medium' : 'text-dark-600 hover:bg-dark-50'}`}
+                  >
+                    English (EN)
+                  </button>
+                  <button 
+                    onClick={() => { setLang('ID'); setLangOpen(false); alert('Bahasa Indonesia dipilih (Demo)') }} 
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${lang === 'ID' ? 'text-brand-600 bg-brand-50 font-medium' : 'text-dark-600 hover:bg-dark-50'}`}
+                  >
+                    Bahasa (ID)
+                  </button>
+                </div>
+              )}
             </div>
+
             <Link to="/public/rfq">
               <Button variant="primary" size="sm">Submit RFQ</Button>
             </Link>
