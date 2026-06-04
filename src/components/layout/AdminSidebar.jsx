@@ -19,6 +19,7 @@ const NAV_ITEMS = [
 
 export function AdminSidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [logoError, setLogoError] = useState(false)
   const navigate = useNavigate()
 
   const signOut = useAdminStore((state) => state.signOut)
@@ -40,10 +41,19 @@ export function AdminSidebar() {
         'flex items-center h-16 px-4 border-b border-dark-800 flex-shrink-0',
         collapsed ? 'justify-center' : 'gap-3'
       )}>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700
-                        flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-display font-bold text-sm">X</span>
-        </div>
+        {!logoError ? (
+          <img 
+            src="/logo.png" 
+            alt="Xpora Logo" 
+            className="h-8 w-auto object-contain flex-shrink-0"
+            onError={() => setLogoError(true)}
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700
+                          flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-display font-bold text-sm">X</span>
+          </div>
+        )}
         {!collapsed && (
           <div>
             <span className="font-display font-bold text-white text-base">Xpora</span>

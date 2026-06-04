@@ -15,6 +15,7 @@ export function PublicHeader() {
   const [scrolled, setScrolled]     = useState(false)
   const [lang, setLang]             = useState('EN')
   const [langOpen, setLangOpen]     = useState(false)
+  const [logoError, setLogoError]   = useState(false)
   const location = useLocation()
 
   useEffect(() => {
@@ -39,11 +40,20 @@ export function PublicHeader() {
         <div className="flex items-center justify-between h-16 md:h-18">
           {/* Logo */}
           <Link to="/public" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700
-                            flex items-center justify-center shadow-brand
-                            group-hover:shadow-brand-lg transition-shadow">
-              <span className="text-white font-display font-bold text-sm">X</span>
-            </div>
+            {!logoError ? (
+              <img 
+                src="/logo.png" 
+                alt="Xpora Logo" 
+                className="h-8 w-auto object-contain"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700
+                              flex items-center justify-center shadow-brand
+                              group-hover:shadow-brand-lg transition-shadow">
+                <span className="text-white font-display font-bold text-sm">X</span>
+              </div>
+            )}
             <span className="font-display font-bold text-xl text-dark-900">
               Xpora
             </span>
