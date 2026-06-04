@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate, Navigate } from 'react-router-dom'
+import { useAdminStore } from '../../store'
 import { motion } from 'framer-motion'
 import {
   ShoppingCart, Users, Package, TrendingUp, Eye,
-  Clock, CheckCircle2, AlertCircle, Filter,
+  Clock, CheckCircle2, AlertCircle,
   BarChart2, MapPin, ArrowUpRight, RefreshCw,
   ArrowLeft, ChevronRight, Plus, Trash2
 } from 'lucide-react'
 import { StatusBadge, GradeBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { MOCK_RFQS, UMKM_LIST, METRICS, ORDER_STATUSES } from '../../data/mockData'
+import { METRICS, ORDER_STATUSES } from '../../data/mockData'
+import { useRFQs, useUMKM } from '../../lib/api'
 import { formatDate, formatWeight } from '../../lib/utils'
 
 /* ─── StatCard ─────────────────────────────────────── */
@@ -104,6 +106,7 @@ function ActivityFeed() {
 
 /* ─── UMKM Capacity Bar ───────────────────────────── */
 function UMKMCapacity() {
+  const { data: UMKM_LIST = [], isLoading } = useUMKM()
   return (
     <div className="bg-dark-900 border border-dark-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-5">
@@ -115,7 +118,7 @@ function UMKMCapacity() {
         </Link>
       </div>
       <div className="space-y-3">
-        {UMKM_LIST.slice(0, 4).map((u) => (
+        {isLoading ? <p className="text-dark-500 text-sm">Loading...</p> : UMKM_LIST.slice(0, 4).map((u) => (
           <div key={u.id} className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-dark-800 flex items-center justify-center flex-shrink-0">
               <MapPin size={11} className="text-brand-400" />
@@ -139,10 +142,13 @@ function UMKMCapacity() {
 
 /* ─── Dashboard Page ──────────────────────────────── */
 export function AdminDashboardPage() {
+  const { data: MOCK_RFQS = [], isLoading, refetch } = useRFQs()
+  
   const [refreshing, setRefreshing] = useState(false)
-  const refresh = () => {
+  const refresh = async () => {
     setRefreshing(true)
-    setTimeout(() => setRefreshing(false), 800)
+    await refetch()
+    setRefreshing(false)
   }
   const now = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })
 
@@ -195,7 +201,9 @@ export function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-800">
-                {MOCK_RFQS.map((rfq) => (
+                {isLoading ? (
+                  <tr><td colSpan="6" className="text-center py-4 text-dark-500 text-sm">Loading recent RFQs...</td></tr>
+                ) : MOCK_RFQS.map((rfq) => (
                   <tr key={rfq.id} className="hover:bg-dark-800/50 transition-colors group">
                     <td className="px-5 py-3.5">
                       <span className="font-mono text-xs text-brand-400">{rfq.id}</span>
@@ -230,6 +238,7 @@ export function AdminDashboardPage() {
 
 /* ─── Orders Page ─────────────────────────────────── */
 export function AdminOrdersPage() {
+  const { data: MOCK_RFQS = [], isLoading } = useRFQs()
   const [filter, setFilter] = useState('all')
   const filtered = filter === 'all'
     ? MOCK_RFQS
@@ -270,7 +279,9 @@ export function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-800">
-              {filtered.map((rfq) => (
+              {isLoading ? (
+                <tr><td colSpan="9" className="text-center py-8 text-dark-500 text-sm">Loading orders...</td></tr>
+              ) : filtered.map((rfq) => (
                 <tr key={rfq.id} className="hover:bg-dark-800/50 transition-colors">
                   <td className="px-5 py-4 font-mono text-xs text-brand-400 whitespace-nowrap">{rfq.id}</td>
                   <td className="px-5 py-4 text-white font-medium text-sm whitespace-nowrap">{rfq.company}</td>
@@ -303,6 +314,7 @@ export function AdminOrdersPage() {
 
 /* ─── UMKM Page ───────────────────────────────────── */
 export function AdminUMKMPage() {
+  const { data: UMKM_LIST = [], isLoading } = useUMKM()
   return (
     <div className="space-y-6">
       <div>
@@ -339,7 +351,9 @@ export function AdminUMKMPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-800">
-              {UMKM_LIST.map((u) => (
+              {isLoading ? (
+                <tr><td colSpan="6" className="text-center py-8 text-dark-500 text-sm">Loading UMKM data...</td></tr>
+              ) : UMKM_LIST.map((u) => (
                 <tr key={u.id} className="hover:bg-dark-800/50 transition-colors">
                   <td className="px-5 py-4 text-dark-600 text-xs">{u.id}</td>
                   <td className="px-5 py-4 text-white font-medium">{u.name}</td>
@@ -363,6 +377,34 @@ export function AdminUMKMPage() {
 
 /* ─── Placeholder pages ─────────────────────────── */
 export function AdminLoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  
+  const navigate = useNavigate()
+  const signIn = useAdminStore(state => state.signIn)
+  const isAuthenticated = useAdminStore(state => state.isAuthenticated)
+  const isInitializing = useAdminStore(state => state.isInitializing)
+
+  if (isInitializing) return null
+  if (isAuthenticated) return <Navigate to="/admin/dashboard" replace />
+
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    
+    const { error: signInError } = await signIn(email, password)
+    
+    if (signInError) {
+      setError(signInError.message)
+      setLoading(false)
+    } else {
+      navigate('/admin/dashboard', { replace: true })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-dark-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
@@ -374,21 +416,38 @@ export function AdminLoginPage() {
           <h1 className="font-display text-2xl font-bold text-white mb-1">Command Center</h1>
           <p className="text-dark-400 text-sm">Xpora Admin — Restricted Access</p>
         </div>
-        <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 space-y-4">
+        <form onSubmit={handleLogin} className="bg-dark-900 border border-dark-800 rounded-xl p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-lg text-center">
+              {error}
+            </div>
+          )}
           <div>
             <label className="label text-dark-300">Email</label>
-            <input type="email" className="input bg-dark-800 border-dark-700 text-white placeholder-dark-500"
-              placeholder="admin@xpora.id" />
+            <input 
+              type="email" 
+              className="input bg-dark-800 border-dark-700 text-white placeholder-dark-500 w-full"
+              placeholder="admin@xpora.id"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <div>
             <label className="label text-dark-300">Password</label>
-            <input type="password" className="input bg-dark-800 border-dark-700 text-white placeholder-dark-500"
-              placeholder="••••••••" />
+            <input 
+              type="password" 
+              className="input bg-dark-800 border-dark-700 text-white placeholder-dark-500 w-full"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
-          <Link to="/admin/dashboard">
-            <Button variant="primary" size="md" fullWidth>Sign In</Button>
-          </Link>
-        </div>
+          <Button type="submit" variant="primary" size="md" fullWidth disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </form>
         <p className="text-center text-dark-600 text-xs mt-6">Xpora Konsorsium only</p>
       </div>
     </div>
@@ -397,11 +456,18 @@ export function AdminLoginPage() {
 
 export function AdminOrderDetailPage() {
   const { id } = useParams()
+  const { data: MOCK_RFQS = [], isLoading: rfqLoading } = useRFQs()
+  const { data: UMKM_LIST = [] } = useUMKM()
+
   const rfq = MOCK_RFQS.find(r => r.id === id)
 
   const [allocations, setAllocations] = useState([])
   const [selectedUMKM, setSelectedUMKM] = useState('')
   const [allocateQty, setAllocateQty] = useState('')
+
+  if (rfqLoading) {
+    return <div className="text-center py-20 text-dark-400">Loading order details...</div>
+  }
 
   if (!rfq) {
     return (

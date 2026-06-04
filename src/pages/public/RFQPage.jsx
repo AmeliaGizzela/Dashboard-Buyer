@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,14 +6,14 @@ import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, ChevronRight, CheckCircle2,
-  Package, Building2, ClipboardList, Loader2,
+  Package, Building2, ClipboardList,
   Info
 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input, Textarea, Select } from '../../components/ui/Input'
 import { GradeBadge } from '../../components/ui/Badge'
-import { PRODUCTS, COUNTRIES } from '../../data/mockData'
-import { generateRFQCode } from '../../lib/utils'
+import { COUNTRIES } from '../../data/mockData'
+import { useProducts, useSubmitRFQ } from '../../lib/api'
 import { useRFQStore } from '../../store'
 
 /* ── Zod Schema ──────────────────────────────── */
@@ -87,7 +87,7 @@ function Field({ children }) {
 
 /* ── Step 1: Product Info ─────────────────────── */
 function Step1({ form, products }) {
-  const { register, formState: { errors }, watch, setValue } = form
+  const { register, formState: { errors }, watch } = form
   const selectedSlug = watch('productSlug')
   const selectedProduct = products.find((p) => p.slug === selectedSlug)
 
@@ -330,6 +330,9 @@ export function RFQPage() {
   const navigate             = useNavigate()
   const [searchParams]       = useSearchParams()
   const { setSubmittedRefCode } = useRFQStore()
+  
+  const { data: PRODUCTS = [] } = useProducts()
+  const { mutateAsync: submitRFQ } = useSubmitRFQ()
 
   const form = useForm({
     resolver: zodResolver(rfqSchema),
@@ -363,10 +366,15 @@ export function RFQPage() {
 
   const onSubmit = async (data) => {
     setSub(true)
-    await new Promise((r) => setTimeout(r, 1400)) // simulate API call
-    const refCode = generateRFQCode()
-    setSubmittedRefCode(refCode)
-    navigate(`/public/rfq/success?ref=${refCode}`)
+    try {
+      const result = await submitRFQ(data)
+      setSubmittedRefCode(result.ref_code)
+      navigate(`/public/rfq/success?ref=${result.ref_code}`)
+    } catch (err) {
+      console.error(err)
+      setSub(false)
+      alert('Failed to submit RFQ. Please try again.')
+    }
   }
 
   const slideVariants = {

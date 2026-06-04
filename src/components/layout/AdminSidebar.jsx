@@ -6,6 +6,7 @@ import {
   Layers, Bell
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { useAdminStore } from '../../store'
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard',  to: '/admin/dashboard' },
@@ -20,8 +21,10 @@ export function AdminSidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
 
-  const handleLogout = () => {
-    // TODO: Supabase signOut
+  const signOut = useAdminStore((state) => state.signOut)
+
+  const handleLogout = async () => {
+    await signOut()
     navigate('/admin')
   }
 
@@ -67,7 +70,7 @@ export function AdminSidebar() {
             }
             title={collapsed ? label : undefined}
           >
-            {({ isActive }) => (
+            {() => (
               <>
                 <Icon size={18} className="flex-shrink-0" />
                 {!collapsed && <span>{label}</span>}

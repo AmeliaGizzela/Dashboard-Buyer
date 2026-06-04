@@ -2,13 +2,13 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Search, SlidersHorizontal, X,
+  Search, X,
   ArrowRight, CheckCircle2, Star,
   ChevronDown, Package
 } from 'lucide-react'
 import { GradeBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { PRODUCTS } from '../../data/mockData'
+import { useProducts } from '../../lib/api'
 
 const GRADES   = ['All Grades', 'Medium', 'Premium', 'Super Premium']
 const SORT_OPT = [
@@ -108,10 +108,11 @@ function ProductCard({ product, index }) {
 }
 
 export function ProductCatalogPage() {
+  const { data: PRODUCTS = [], isLoading } = useProducts()
+  
   const [query,     setQuery]     = useState('')
   const [grade,     setGrade]     = useState('All Grades')
   const [sort,      setSort]      = useState('featured')
-  const [showFilter, setShowFilter] = useState(false)
 
   const filtered = useMemo(() => {
     let list = [...PRODUCTS]
@@ -141,7 +142,7 @@ export function ProductCatalogPage() {
     if (sort === 'featured')   list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
 
     return list
-  }, [query, grade, sort])
+  }, [query, grade, sort, PRODUCTS])
 
   const hasFilter = query || grade !== 'All Grades'
 
@@ -232,7 +233,9 @@ export function ProductCatalogPage() {
         </div>
 
         {/* ── Grid ── */}
-        {filtered.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-24 text-dark-400">Loading products from database...</div>
+        ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
             {filtered.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />

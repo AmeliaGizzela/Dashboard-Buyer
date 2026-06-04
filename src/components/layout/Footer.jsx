@@ -9,7 +9,6 @@ const FOOTER_LINKS = {
     { label: 'View All Products',   to: '/public/products' },
   ],
   Company: [
-    { label: 'About Xpora',  to: '/public#about' },
     { label: 'How It Works', to: '/public#how-it-works' },
     { label: 'For UMKM',     to: '/join' },
     { label: 'Submit RFQ',   to: '/public/rfq' },

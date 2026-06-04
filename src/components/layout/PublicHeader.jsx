@@ -8,7 +8,6 @@ const NAV_LINKS = [
   { label: 'Home',     to: '/public' },
   { label: 'Products', to: '/public/products' },
   { label: 'For UMKM', to: '/join' },
-  { label: 'About',    to: '/public#about' },
 ]
 
 export function PublicHeader() {
@@ -24,6 +23,7 @@ export function PublicHeader() {
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
+  // eslint-disable-next-line
   useEffect(() => { setMobileOpen(false) }, [location])
 
   return (

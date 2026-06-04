@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAdminStore } from './store'
 
 // Layouts
 import { PublicLayout } from './components/layout/PublicLayout'
@@ -26,14 +28,23 @@ import {
   AdminSettingsPage,
 } from './pages/admin/AdminLoginPage'
 
-// Simple auth guard — replace with Supabase session check in Task 6
-const isAdminAuthenticated = () => true
-
 function AdminProtectedRoute({ children }) {
-  return isAdminAuthenticated() ? children : <Navigate to="/admin" replace />
+  const isAuthenticated = useAdminStore((state) => state.isAuthenticated)
+  const isInitializing = useAdminStore((state) => state.isInitializing)
+
+  if (isInitializing) {
+    return <div className="min-h-screen bg-dark-950 flex items-center justify-center text-white">Loading session...</div>
+  }
+  return isAuthenticated ? children : <Navigate to="/admin" replace />
 }
 
 export default function App() {
+  const initSession = useAdminStore(state => state.initSession)
+  
+  useEffect(() => {
+    initSession()
+  }, [initSession])
+
   return (
     <BrowserRouter>
       <Routes>

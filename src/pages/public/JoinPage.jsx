@@ -5,10 +5,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  CheckCircle2, ChevronDown, ChevronRight,
+  CheckCircle2, ChevronDown,
   Star, Users, TrendingUp, ShieldCheck,
   Package, FileText, Banknote, Globe,
-  ArrowRight, MapPin, Phone, Building2
+  MapPin, Phone, Building2
 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input, Select, Textarea } from '../../components/ui/Input'

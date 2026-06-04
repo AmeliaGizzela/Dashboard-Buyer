@@ -8,7 +8,8 @@ import {
 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { GradeBadge } from '../../components/ui/Badge'
-import { PRODUCTS, METRICS, TESTIMONIALS, HOW_IT_WORKS } from '../../data/mockData'
+import { METRICS, TESTIMONIALS, HOW_IT_WORKS } from '../../data/mockData'
+import { useProducts } from '../../lib/api'
 
 /* ── animation helpers ── */
 const fadeUp = {
@@ -226,6 +227,8 @@ function HowItWorks() {
    PRODUCT HIGHLIGHTS
 ════════════════════════════ */
 function ProductHighlights() {
+  const { data: PRODUCTS = [], isLoading } = useProducts()
+  
   return (
     <Section id="products-preview" className="bg-white">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
@@ -246,7 +249,9 @@ function ProductHighlights() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-        {PRODUCTS.map((p, i) => (
+        {isLoading ? (
+          <div className="col-span-3 text-center py-10 text-dark-400">Loading products...</div>
+        ) : PRODUCTS.slice(0, 3).map((p, i) => (
           <motion.div key={p.id} variants={stagger(i * 0.1)}>
             <Link to={`/public/products/${p.slug}`} id={`product-card-${p.slug}`}>
               <div className="card-hover overflow-hidden group h-full">

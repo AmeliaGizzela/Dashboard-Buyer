@@ -407,6 +407,43 @@ Tables:
 
 ---
 
+---
+
+## Setup & Dokumentasi Supabase
+
+Platform ini menggunakan Supabase sebagai Backend-as-a-Service (BaaS). Berikut adalah setup dasar yang sudah dilakukan:
+
+1. **Supabase Client**: 
+   - Lokasi: `src/lib/supabase.js`.
+   - Menggunakan `@supabase/supabase-js`.
+   - *Penting*: Ini adalah project **Vite (React SPA)**, bukan Next.js. Oleh karena itu environment variables menggunakan awalan `VITE_` dan diakses melalui `import.meta.env`.
+
+2. **Environment Variables** (Simpan di `.env.local`):
+   ```env
+   VITE_SUPABASE_URL=your_project_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   # VITE_SUPABASE_SERVICE_ROLE_KEY=your_service_role_key (Hanya digunakan untuk skrip eksternal/server, JANGAN PERNAH bocorkan ini ke frontend Vite!)
+   ```
+
+3. **Database Schema & Migrations**:
+   - Skema database (tabel `products`, `rfqs`, `umkm`, `umkm_applications`, `allocations`) sudah disiapkan.
+   - Semua tabel memiliki **Row Level Security (RLS)**. Publik hanya bisa insert RFQ dan baca produk. Hanya Admin yang bisa akses penuh.
+   - File migrasi SQL / schema disimpan pada direktori `/supabase/migrations/`.
+   - File data contoh (dummy) ada di `/supabase/seed.sql`.
+
+4. **Cara Apply Migration & Seed ke Supabase**:
+   **Cara 1: Lewat Supabase Dashboard (Paling Mudah untuk Pemula/MVP)**
+   - Buka Supabase Dashboard > SQL Editor.
+   - Buka file `supabase/migrations/20260518000000_init_schema.sql` di komputer Anda, *copy* semua teksnya, *paste* ke SQL Editor Supabase, lalu klik **Run**.
+   - Untuk data awal, ulangi proses yang sama dengan file `supabase/seed.sql`.
+   
+   **Cara 2: Lewat Supabase CLI (Standar Industri)**
+   - Jalankan `npx supabase link --project-ref <REF_PROJECT_ANDA>`
+   - Jalankan `npx supabase db push` (untuk apply schema)
+   - Jalankan `npx supabase db reset` (untuk apply schema sekaligus *seed data*)
+
+---
+
 ## Timeline Estimasi (Lean Startup)
 
 | Task | Estimasi Waktu | Priority |

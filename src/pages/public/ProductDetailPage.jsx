@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { GradeBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { PRODUCTS } from '../../data/mockData'
+import { useProductBySlug, useProducts } from '../../lib/api'
 
 const COUNTRY_ICONS = { japan: '🇯🇵', singapore: '🇸🇬', us: '🇺🇸', eu: '🇪🇺' }
 
@@ -71,6 +71,7 @@ function ComplianceTable({ compliance }) {
 }
 
 function RelatedProducts({ current }) {
+  const { data: PRODUCTS = [] } = useProducts()
   const related = PRODUCTS.filter((p) => p.id !== current.id && p.category === current.category)
   if (!related.length) return null
   return (
@@ -103,11 +104,11 @@ function RelatedProducts({ current }) {
 
 export function ProductDetailPage() {
   const { slug } = useParams()
-  const product   = PRODUCTS.find((p) => p.slug === slug)
-
-  if (!product) return <Navigate to="/public/products" replace />
-
+  const { data: product, isLoading } = useProductBySlug(slug)
   const [openAccordion, setOpenAccordion] = useState('specs')
+
+  if (isLoading) return <div className="pt-40 text-center text-dark-500">Loading product details...</div>
+  if (!product) return <Navigate to="/public/products" replace />
 
   const toggleAccordion = (key) =>
     setOpenAccordion((prev) => (prev === key ? null : key))

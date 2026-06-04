@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { supabase } from '../lib/supabase'
 
 // =============================================
 // APP STORE — Global state via Zustand
@@ -60,11 +61,27 @@ export const useRFQStore = create((set) => ({
  * useAdminStore — admin session & UI state
  */
 export const useAdminStore = create((set) => ({
-  // Auth (will be replaced with Supabase session in Task 6)
   isAuthenticated: false,
-  adminUser: null,
-  setAuth: (user) => set({ isAuthenticated: true, adminUser: user }),
-  clearAuth: () => set({ isAuthenticated: false, adminUser: null }),
+  session: null,
+  isInitializing: true,
+  
+  initSession: async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    set({ isAuthenticated: !!session, session, isInitializing: false })
+    
+    supabase.auth.onAuthStateChange((_event, session) => {
+      set({ isAuthenticated: !!session, session })
+    })
+  },
+  
+  signIn: async (email, password) => {
+    return await supabase.auth.signInWithPassword({ email, password })
+  },
+  
+  signOut: async () => {
+    await supabase.auth.signOut()
+    set({ isAuthenticated: false, session: null })
+  },
 
   // Orders filter state
   ordersFilter: { status: 'all', product: 'all', country: 'all' },

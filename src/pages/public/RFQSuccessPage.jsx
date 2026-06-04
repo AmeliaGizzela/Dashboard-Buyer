@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle2, ArrowRight, Clock, MessageCircle, Download } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Clock, MessageCircle } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
-import { buildWhatsAppUrl } from '../../lib/utils'
 import confetti from 'canvas-confetti'
 
 const WA_NUMBER = '6281234567890'
